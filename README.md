@@ -7,7 +7,16 @@ Given a password, assess its robustness, based on character set and password dic
 
 A [Flask](https://flask.palletsprojects.com/) powerer API.
 
+As good default practices, use a virtual environment, install dependencies `pip install -f requirements.txt`
+
+
 Unit tests are in doctests, and integration ones in xxx_test.py
+
+#### Check it out
+Once the API is running (`flask run`), you can visit:
+```
+http://127.0.0.1:5000/paf%20le%20chien
+```
 
 ### web frontend
 

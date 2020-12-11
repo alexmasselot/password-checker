@@ -1,5 +1,6 @@
 import string
 
+
 def password_length_score(password: str):
     """
     Get a score based on the password length (source ???)
@@ -110,7 +111,7 @@ def brute_force_ms(password: str):
     7.111997344304575e+16
     """
     i7_ips = 317900000000
-    return (alphabet_size(password) ** len(password))/float(i7_ips)
+    return (alphabet_size(password) ** len(password)) / float(i7_ips)
 
 
 if __name__ == "__main__":
