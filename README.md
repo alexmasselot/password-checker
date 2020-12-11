@@ -1,7 +1,17 @@
 # Password checker API
 
+Given a password, assess its robustness, based on character set and password dictionaries
 
-## Source
+## Architecture
+### Python backend
+
+A [Flask](https://flask.palletsprojects.com/) powerer API.
+
+Unit tests are in doctests, and integration ones in xxx_test.py
+
+### web frontend
+
+## Sources
 ### password dictionaries
 A few dictionaries are checked. They reside in the `flask/resources/dictionaries` folder.
 
