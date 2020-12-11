@@ -36,9 +36,11 @@ _punctuation = ['!', '@', '#', '$', '%', '^', '&', '*', '?']
 _numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 
-def generate_substitution(password: str, append_punctuation: bool = False, append_number: bool = False):
+def generate_substitution(password: str, substitute_characters:bool = True, append_punctuation: bool = False, append_number: bool = False):
     """
     Generate all "char subsitution" password (e.g. 'c' -> 'C', 'e' -> '3' etc.)
+    :param substitute_characters: Shall we run the character substituion
+    :type substitute_characters: bool
     :param append_punctuation: True to append a punctuation character
     :type append_punctuation: bool
     :param append_number: True to append a digit character
@@ -48,6 +50,10 @@ def generate_substitution(password: str, append_punctuation: bool = False, appen
     :return: the list of subsituted password
     :rtype: list[str]
 
+    >>> generate_substitution('paf', substitute_characters=False)
+    ['paf']
+    >>> generate_substitution('paf', substitute_characters=False, append_number=True)
+    ['paf', 'paf0', 'paf1', 'paf2', 'paf3', 'paf4', 'paf5', 'paf6', 'paf7', 'paf8', 'paf9']
     >>> generate_substitution('x')
     ['x', 'X', '+']
     >>> generate_substitution('X')
@@ -58,26 +64,29 @@ def generate_substitution(password: str, append_punctuation: bool = False, appen
     ['xx', 'xX', 'x+', 'Xx', 'XX', 'X+', '+x', '+X', '++']
     >>> generate_substitution('paf')
     ['paf', 'paF', 'pAf', 'pAF', 'p@f', 'p@F', 'p4f', 'p4F', 'Paf', 'PaF', 'PAf', 'PAF', 'P@f', 'P@F', 'P4f', 'P4F']
-    >>> [ x for x in generate_substitution('+', append_punctuation=True) if '#' in x]
+    >>> [ x for x in generate_substitution('+',append_punctuation=True) if '#' in x]
     ['x#', 'X#', '+#']
-    >>> [ x for x in generate_substitution('+', append_punctuation=True) if len(x) == 1]
+    >>> [ x for x in generate_substitution('+',append_punctuation=True) if len(x) == 1]
     ['x', 'X', '+']
-    >>> [ x for x in generate_substitution('+', append_number=True) if '4' in x]
+    >>> [ x for x in generate_substitution('+',append_number=True) if '4' in x]
     ['x4', 'X4', '+4']
-    >>> [ x for x in generate_substitution('+', append_number=True) if len(x) == 1]
+    >>> [ x for x in generate_substitution('+',append_number=True) if len(x) == 1]
     ['x', 'X', '+']
-    >>> [ x for x in generate_substitution('+', append_punctuation=True, append_number=True) if '#' in x and '4' in x]
+    >>> [ x for x in generate_substitution('+',append_punctuation=True,append_number=True) if '#' in x and '4' in x]
     ['x#4', 'X#4', '+#4', 'x4#', 'X4#', '+4#']
-    >>> [ x for x in generate_substitution('+', append_punctuation=True, append_number=True) if '#' in x and len(x)==2]
+    >>> [ x for x in generate_substitution('+',append_punctuation=True,append_number=True) if '#' in x and len(x)==2]
     ['x#', 'X#', '+#']
     """
-    letters = []
-    for val in password:
-        if val in _subDict.keys():
-            letters.append(_subDict[val])
-        else:
-            letters.append([val])
-    substitutes_orig = [''.join(item) for item in product(*letters)]
+    if substitute_characters:
+        letters = []
+        for val in password:
+            if val in _subDict.keys():
+                letters.append(_subDict[val])
+            else:
+                letters.append([val])
+        substitutes_orig = [''.join(item) for item in product(*letters)]
+    else:
+        substitutes_orig = [password]
 
     if append_punctuation and append_number:
         substitutes = substitutes_orig + [''.join(item) for item in

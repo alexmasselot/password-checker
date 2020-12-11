@@ -1,3 +1,7 @@
+from itertools import chain
+
+from flaskr.passwordChecker.substitute import generate_substitution
+
 _all_dictionaries = []
 
 
@@ -17,27 +21,39 @@ class PasswordDictionary:
         return f'{self.name} {len(self.words)} words'
 
 
-def load_dictionary(filename: str):
+def load_dictionary(filename: str, substitute_characters: bool = True, append_punctuation: bool = False,
+                    append_number: bool = False):
     """
     Load all the word (one per line) from a text file into a PasswordDictionary.
     Words are trimmed.
 
-    :param filename: the dictiopnary file
+    :param substitute_characters: should we run the character substitution
+    :type substitute_characters: bool
+    :param append_punctuation: should we append number to each substitution
+    :type append_punctuation:
+    :param append_number: should we append number to each substitution
+    :type append_number: bool
+    :param filename: the dictionary file
     :type filename: str
     :return: the loaded dictionary with its words and filename as name
     :rtype: PasswordDictionary
     """
     f = open(filename, "r")
-    words = [w.strip() for w in list(f)]
+    words = [generate_substitution(w.strip(), substitute_characters, append_punctuation, append_number)
+             for w in list(f)]
     f.close()
-    return PasswordDictionary(filename, words)
+    return PasswordDictionary(filename, list(chain(*words)))
 
 
-def load_all_dictionaries(dirname: str):
+def load_all_dictionaries(dirname: str, substitute_characters: bool = True, append_punctuation: bool = False,
+                          append_number: bool = False):
     global _all_dictionaries
     from os import listdir
     files = listdir(dirname)
-    _all_dictionaries = [load_dictionary(f'{dirname}/{filename}') for filename in files]
+    _all_dictionaries = [
+        load_dictionary(f'{dirname}/{filename}', substitute_characters, append_punctuation, append_number) for filename
+        in files]
+
 
 def exists_in_dictionary(password: str, dictionary: PasswordDictionary):
     """
