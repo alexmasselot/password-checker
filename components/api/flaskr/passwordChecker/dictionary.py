@@ -25,7 +25,7 @@ def load_dictionary(filename: str, substitute_characters: bool = True, append_pu
                     append_number: bool = False):
     """
     Load all the word (one per line) from a text file into a PasswordDictionary.
-    Words are trimmed.
+    Words are trimmed and substituion or character, as well as appending punctuation and and number can be generated
 
     :param substitute_characters: should we run the character substitution
     :type substitute_characters: bool
@@ -50,9 +50,10 @@ def load_all_dictionaries(dirname: str, substitute_characters: bool = True, appe
     global _all_dictionaries
     from os import listdir
     files = listdir(dirname)
-    _all_dictionaries = [
-        load_dictionary(f'{dirname}/{filename}', substitute_characters, append_punctuation, append_number) for filename
-        in files]
+    for filename in files:
+        dico = load_dictionary(f'{dirname}/{filename}', substitute_characters, append_punctuation, append_number)
+        print(f'Loaded dictionary {dico}')
+        _all_dictionaries.append(dico)
 
 
 def exists_in_dictionary(password: str, dictionary: PasswordDictionary):
