@@ -7,7 +7,7 @@ class DictionaryTest(TestCase):
     def test_load_dictionary(self):
         dico = load_dictionary('../resources/test/dictionaries/one.txt')
 
-        self.assertEqual({'paf', 'le', 'chien'}, dico.words)
+        self.assertTrue('p@F' in dico.words)
 
     def test_load_all_dictionaries(self):
         load_all_dictionaries('../resources/test/dictionaries')
@@ -21,5 +21,6 @@ class DictionaryTest(TestCase):
 
         self.assertIsNotNone(got_one)
         self.assertIsNotNone(got_two)
-        self.assertEqual({'paf', 'le', 'chien'}, got_one.words)
-        self.assertEqual({'flap', 'la', 'girafe'}, got_two.words)
+
+        self.assertTrue('chien' in got_one.words)
+        self.assertTrue('fi@p' in got_two.words)
