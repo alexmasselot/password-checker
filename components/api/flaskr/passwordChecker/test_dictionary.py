@@ -1,16 +1,17 @@
 from unittest import TestCase
 
 from flaskr.passwordChecker.dictionary import load_dictionary, all_dictionaries, load_all_dictionaries
+from flaskr.passwordChecker.substitute import SubstitutionParams
 
 
 class DictionaryTest(TestCase):
     def test_load_dictionary(self):
-        dico = load_dictionary('../resources/test/dictionaries/one.txt')
+        dico = load_dictionary('../resources/test/dictionaries/one.txt', SubstitutionParams())
 
         self.assertTrue('p@F' in dico.words)
 
     def test_load_all_dictionaries(self):
-        load_all_dictionaries('../resources/test/dictionaries')
+        load_all_dictionaries('../resources/test/dictionaries', SubstitutionParams())
 
         got = all_dictionaries()
 

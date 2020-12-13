@@ -1,6 +1,6 @@
 from itertools import chain
 
-from flaskr.passwordChecker.substitute import generate_substitution
+from flaskr.passwordChecker.substitute import generate_substitution, SubstitutionParams
 
 _all_dictionaries = []
 
@@ -21,37 +21,31 @@ class PasswordDictionary:
         return f'{self.name} {len(self.words)} words'
 
 
-def load_dictionary(filename: str, substitute_characters: bool = True, append_punctuation: bool = False,
-                    append_number: bool = False):
+def load_dictionary(filename: str, params: SubstitutionParams):
     """
     Load all the word (one per line) from a text file into a PasswordDictionary.
     Words are trimmed and substituion or character, as well as appending punctuation and and number can be generated
 
-    :param substitute_characters: should we run the character substitution
-    :type substitute_characters: bool
-    :param append_punctuation: should we append number to each substitution
-    :type append_punctuation:
-    :param append_number: should we append number to each substitution
-    :type append_number: bool
+    :param params: specifies the search space when building the dictionary
+    :type params: SubstitutionParams
     :param filename: the dictionary file
     :type filename: str
     :return: the loaded dictionary with its words and filename as name
     :rtype: PasswordDictionary
     """
     f = open(filename, "r")
-    words = [generate_substitution(w.strip(), substitute_characters, append_punctuation, append_number)
+    words = [generate_substitution(w.strip(), params)
              for w in list(f)]
     f.close()
     return PasswordDictionary(filename, list(chain(*words)))
 
 
-def load_all_dictionaries(dirname: str, substitute_characters: bool = True, append_punctuation: bool = False,
-                          append_number: bool = False):
+def load_all_dictionaries(dirname: str, params: SubstitutionParams):
     global _all_dictionaries
     from os import listdir
     files = listdir(dirname)
     for filename in files:
-        dico = load_dictionary(f'{dirname}/{filename}', substitute_characters, append_punctuation, append_number)
+        dico = load_dictionary(f'{dirname}/{filename}', params)
         print(f'Loaded dictionary {dico}')
         _all_dictionaries.append(dico)
 
