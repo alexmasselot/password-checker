@@ -2,14 +2,14 @@ from itertools import chain
 
 from flaskr.passwordChecker.substitute import generate_substitution, SubstitutionParams
 
-_all_dictionaries = []
 
-
-def all_dictionaries():
-    return _all_dictionaries
-
+# One technique to check for password robustness is to run them against dictionaries.
 
 class PasswordDictionary:
+    """
+    contains a list of words to be checked upon.
+    Thses words must have already be substitutes
+    """
     name: str
     words: set
 
@@ -20,11 +20,28 @@ class PasswordDictionary:
     def __repr__(self):
         return f'{self.name} {len(self.words)} words'
 
+    def contains(self, password: str):
+        """
+        Check if the given password exist in the dictionary
+        :param password: the password to check
+        :type password: str
+        :return: True if it was found
+        :rtype: bool
+
+        >>> dico = PasswordDictionary('test', ['flap', 'la', 'girafe'])
+        >>> dico.contains('paf')
+        False
+        >>> dico.contains('girafe')
+        True
+        """
+
+        return password in self.words
+
 
 def load_dictionary(filename: str, params: SubstitutionParams):
     """
     Load all the word (one per line) from a text file into a PasswordDictionary.
-    Words are trimmed and substituion or character, as well as appending punctuation and and number can be generated
+    Words are trimmed and substitution or character, as well as appending punctuation and and number can be generated
 
     :param params: specifies the search space when building the dictionary
     :type params: SubstitutionParams
@@ -40,57 +57,46 @@ def load_dictionary(filename: str, params: SubstitutionParams):
     return PasswordDictionary(filename, list(chain(*words)))
 
 
-def load_all_dictionaries(dirname: str, params: SubstitutionParams):
-    global _all_dictionaries
-    from os import listdir
-    files = listdir(dirname)
-    for filename in files:
-        dico = load_dictionary(f'{dirname}/{filename}', params)
-        print(f'Loaded dictionary {dico}')
-        _all_dictionaries.append(dico)
-
-
-def exists_in_dictionary(password: str, dictionary: PasswordDictionary):
+class DictionaryChecker:
     """
-    Check if the given password exist in the dictionary
-    :param password: the password to check
-    :type password: str
-    :param dictionary: a dictionary where to look into
-    :type dictionary: PasswordDictionary
-    :return: True if it was found
-    :rtype: bool
-
-    //>>> exists_in_dictionary('g1rafe', PasswordDictionary('test', ['flap', 'la', 'girafe']))
-    //True
-    >>> exists_in_dictionary('paf', PasswordDictionary('test', ['flap', 'la', 'girafe']))
-    False
-    >>> exists_in_dictionary('girafe', PasswordDictionary('test', ['flap', 'la', 'girafe']))
-    True
+    Manages a list of dictionaries
     """
 
-    return password in dictionary.words
+    def __init__(self):
+        self.dictionaries = []
+        pass
 
+    def __str__(self):
+        return f'{len(self.dictionaries)} dictionaries\n' + '\n'.join([str(d) for d in self.dictionaries])
 
-def exists_in_any_dictionary(password: str, dictionaries: list = _all_dictionaries):
-    """
-    Check if the given password exist in any of the dictionaries
-    :param password: the password to check
-    :type password: str
-    :param dictionaries: list of dictionaries where to look into
-    :type dictionaries: list[PasswordDictionary]
-    :return: True if it was found
-    :rtype: bool
+    def load_all_dictionaries(self, dirname: str, params: SubstitutionParams):
+        from os import listdir
+        files = listdir(dirname)
+        for filename in files:
+            dico = load_dictionary(f'{dirname}/{filename}', params)
+            print(f'Loaded dictionary {dico}')
+            self.dictionaries.append(dico)
 
-    >>> exists_in_any_dictionary('42', [PasswordDictionary('flap', ['flap', 'la', 'girafe']), PasswordDictionary('paf', ['paf', 'le', 'chien'])] )
-    False
-    >>> exists_in_any_dictionary('la', [PasswordDictionary('flap', ['flap', 'la', 'girafe']), PasswordDictionary('paf', ['paf', 'le', 'chien'])] )
-    True
-    >>> exists_in_any_dictionary('paf', [PasswordDictionary('flap', ['flap', 'la', 'girafe']), PasswordDictionary('paf', ['paf', 'le', 'chien'])] )
-    True
-    """
+    def contains(self, password: str):
+        """
+        Check if the given password exist in any of the dictionaries
+        :param password: the password to check
+        :type password: str
+        :return: True if it was found
+        :rtype: bool
 
-    for dictionary in dictionaries:
-        if exists_in_dictionary(password, dictionary):
-            return True
+        >>> dicoChecker = DictionaryChecker()
+        >>> dicoChecker.dictionaries = [PasswordDictionary('flap', ['flap', 'la', 'girafe']),PasswordDictionary('paf', ['paf', 'le', 'chien'])]
+        >>> dicoChecker.contains('42' )
+        False
+        >>> dicoChecker.contains('la' )
+        True
+        >>> dicoChecker.contains('paf')
+        True
+        """
 
-    return False
+        for dictionary in self.dictionaries:
+            if dictionary.contains(password):
+                return True
+
+        return False
