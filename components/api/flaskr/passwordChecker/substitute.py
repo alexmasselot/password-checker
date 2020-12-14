@@ -1,6 +1,9 @@
 from itertools import product, chain, combinations
 
 
+# if a word such as 'bonjour' is passed, we want to generate variants, by substituting letters, adding punctuation and
+# so on. This file contains the function to generate al those variants
+
 class SubstitutionParams:
     substitute_characters: int
     append_punctuation: bool
@@ -12,7 +15,7 @@ class SubstitutionParams:
                  append_number: bool = False
                  ):
         """
-        Defines the space to looks for when we build a dictionary
+        Defines the space to look for when we build a dictionary
         :param substitute_characters: should we run the character substitution [10000 => all]
         :type substitute_characters: bool
         :param append_punctuation: should we append number to each substitution [False]
@@ -65,10 +68,10 @@ _numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 def generate_substitution(password: str, params: SubstitutionParams):
     """
     Generate all "char subsitution" password (e.g. 'c' -> 'C', 'e' -> '3' etc.)
-    :param password: the password to run
+    :param password: the password to run for substitution
     :type password: str
-    :param params:
-    :type params:
+    :param params: setting the space for substituions
+    :type params: SubstitutionParams
     :return: the list of subsituted password
     :rtype: list[str]
 
@@ -76,28 +79,31 @@ def generate_substitution(password: str, params: SubstitutionParams):
     ['paf']
     >>> generate_substitution('paf', SubstitutionParams(substitute_characters=False, append_number=True))
     ['paf', 'paf0', 'paf1', 'paf2', 'paf3', 'paf4', 'paf5', 'paf6', 'paf7', 'paf8', 'paf9']
-    >>> generate_substitution('x', SubstitutionParams())
-    ['x', 'X', '+']
-    >>> generate_substitution('X', SubstitutionParams())
-    ['x', 'X', '+']
-    >>> generate_substitution('+', SubstitutionParams())
-    ['x', 'X', '+']
+    >>> sorted(generate_substitution('x', SubstitutionParams()))
+    ['+', 'X', 'x']
+    >>> sorted(generate_substitution('X', SubstitutionParams()))
+    ['+', 'X', 'x']
+    >>> sorted(generate_substitution('+', SubstitutionParams()))
+    ['+', 'X', 'x']
     >>> generate_substitution('xX', SubstitutionParams())
-    ['xx', 'xX', 'x+', 'Xx', 'XX', 'X+', '+x', '+X', '++']
-    >>> generate_substitution('paf', SubstitutionParams())
-    ['paf', 'paF', 'pAf', 'pAF', 'p@f', 'p@F', 'p4f', 'p4F', 'Paf', 'PaF', 'PAf', 'PAF', 'P@f', 'P@F', 'P4f', 'P4F']
-    >>> [ x for x in generate_substitution('+', SubstitutionParams(append_punctuation=True)) if '#' in x]
-    ['x#', 'X#', '+#']
-    >>> [ x for x in generate_substitution('+', SubstitutionParams(append_punctuation=True)) if len(x) == 1]
-    ['x', 'X', '+']
-    >>> [ x for x in generate_substitution('+', SubstitutionParams(append_number=True)) if '4' in x]
-    ['x4', 'X4', '+4']
-    >>> [ x for x in generate_substitution('+', SubstitutionParams(append_number=True)) if len(x) == 1]
-    ['x', 'X', '+']
-    >>> [ x for x in generate_substitution('+', SubstitutionParams(append_punctuation=True, append_number=True)) if '#' in x and '4' in x]
-    ['x#4', 'X#4', '+#4', 'x4#', 'X4#', '+4#']
-    >>> [ x for x in generate_substitution('+', SubstitutionParams(append_punctuation=True, append_number=True)) if '#' in x and len(x)==2]
-    ['x#', 'X#', '+#']
+    ['xX', 'XX', '+X', 'xx', 'x+', 'Xx', 'X+', '+x', '++']
+    >>> sorted(generate_substitution('paf', SubstitutionParams()))
+    ['P4F', 'P4f', 'P@F', 'P@f', 'PAF', 'PAf', 'PaF', 'Paf', 'p4F', 'p4f', 'p@F', 'p@f', 'pAF', 'pAf', 'paF', 'paf']
+    >>> plus_punct = sorted(generate_substitution('+', SubstitutionParams(append_punctuation=True)))
+    >>> [ x for x in plus_punct if '#' in x ]
+    ['+#', 'X#', 'x#']
+    >>> [ x for x in plus_punct if len(x) == 1 ]
+    ['+', 'X', 'x']
+    >>> plus_number =  sorted(generate_substitution('+', SubstitutionParams(append_number=True)))
+    >>> [ x for x in plus_number if '4' in x ]
+    ['+4', 'X4', 'x4']
+    >>> [ x for x in plus_number if len(x) == 1 ]
+    ['+', 'X', 'x']
+    >>> plus_punct_number = sorted(generate_substitution('+', SubstitutionParams(append_punctuation=True, append_number=True)))
+    >>> [ x for x in plus_punct_number if '#' in x and '4' in x]
+    ['+#4', '+4#', 'X#4', 'X4#', 'x#4', 'x4#']
+    >>> [ x for x in plus_punct_number if '#' in x and len(x)==2]
+    ['+#', 'X#', 'x#']
     """
     substitutes_orig = substitute_characters(password, params.substitute_characters)
 
@@ -122,7 +128,7 @@ def generate_substitution(password: str, params: SubstitutionParams):
 
 def substitute_characters(password: str, nb_chars_to_substitute: int):
     """
-    Given a list of passwords, generate a list of passwords by substituting at most a given number of characters
+    Given a password, generate a list of passwords by substituting at most a given number of characters
     :param password: the original password
     :type password: str
     :param nb_chars_to_substitute: the number of characters to substitute
