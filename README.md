@@ -25,7 +25,7 @@ To run all of them, on file changes (useful in dev)
 #### Check it out
 Once the API is running (`flask run`), you can visit:
 ```
-http://127.0.0.1:5000/paf%20le%20chien
+http://127.0.0.1:5000/api/paf%20le%20chien
 ```
 
 ### web frontend
