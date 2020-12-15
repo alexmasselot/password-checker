@@ -1,35 +1,33 @@
-from itertools import product, chain, combinations
+from itertools import product, chain
+import re
 
 
-# if a word such as 'bonjour' is passed, we want to generate variants, by substituting letters, adding punctuation and
-# so on. This file contains the function to generate al those variants
+# if a word such as 'bonjour' is passed, we want to check variants, by substituting letters, adding punctuation and
+# so on. This file contains the function to check on the fly all those variants
 
-class SubstitutionParams:
-    substitute_characters: int
-    append_punctuation: bool
-    append_number: bool
-
+class ScramblingParams:
     def __init__(self,
-                 substitute_characters: int = 10000,
-                 append_punctuation: bool = False,
-                 append_number: bool = False
+                 max_trailing: int = 0,
+                 trailing_numbers: bool = True,
+                 trailing_punctuations: bool = True
                  ):
         """
-        Defines the space to look for when we build a dictionary
-        :param substitute_characters: should we run the character substitution [10000 => all]
-        :type substitute_characters: bool
-        :param append_punctuation: should we append number to each substitution [False]
-        :type append_punctuation:
-        :param append_number: should we append number to each substitution [False]
-        :type append_number: bool
+        Defines the space to look for when we scan for scrambled passwords
+        :param max_trailing: what is the length of the trail to wipe if it is either punctuation or numbers [0]
+        :type max_trailing: int
+        :param trailing_numbers: should we be tolerant to trailing numbers [True]
+        :type trailing_numbers: bool
+        :param trailing_punctuations: should we be tolerant to trailing punctuation characters [True]
+        :type trailing_punctuations: bool
+
 
         """
-        self.substitute_characters = substitute_characters
-        self.append_punctuation = append_punctuation
-        self.append_number = append_number
+        self.trailing_numbers = trailing_numbers
+        self.trailing_punctuations = trailing_punctuations
+        self.max_trailing = max_trailing
 
 
-_subDict = {
+_sub_dict = {
     'a': ['a', 'A', '@', '4'],
     'b': ['b', 'B', '8', '6'],
     'c': ['c', 'C', '[', '{', '(', '<'],
@@ -57,167 +55,252 @@ _subDict = {
     'y': ['y', 'Y'],
     'z': ['z', 'Z', '2'],
 }
-for it in list(_subDict.items()):
-    for char in it[1]:
-        _subDict[char] = _subDict[it[0]]
 
 _punctuation = ['!', '@', '#', '$', '%', '^', '&', '*', '?']
 _numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 
-def generate_substitution(password: str, params: SubstitutionParams):
-    """
-    Generate all "char subsitution" password (e.g. 'c' -> 'C', 'e' -> '3' etc.)
-    :param password: the password to run for substitution
-    :type password: str
-    :param params: setting the space for substituions
-    :type params: SubstitutionParams
-    :return: the list of subsituted password
-    :rtype: list[str]
+class CharacterProjector:
+    def __init__(self, subst_dict=_sub_dict, scrambling_params: ScramblingParams = ScramblingParams()
+                 ):
+        """
+        :param subst_dict: a dictionary with the character substitution
+        :type subst_dict: dict
+        :param scrambling_params: defining the scrambling space
+        :type scrambling_params: ScramblingParams
+        """
 
-    >>> generate_substitution('paf', SubstitutionParams(substitute_characters=0))
-    ['paf']
-    >>> generate_substitution('paf', SubstitutionParams(substitute_characters=False, append_number=True))
-    ['paf', 'paf0', 'paf1', 'paf2', 'paf3', 'paf4', 'paf5', 'paf6', 'paf7', 'paf8', 'paf9']
-    >>> sorted(generate_substitution('x', SubstitutionParams()))
-    ['+', 'X', 'x']
-    >>> sorted(generate_substitution('X', SubstitutionParams()))
-    ['+', 'X', 'x']
-    >>> sorted(generate_substitution('+', SubstitutionParams()))
-    ['+', 'X', 'x']
-    >>> generate_substitution('xX', SubstitutionParams())
-    ['xX', 'XX', '+X', 'xx', 'x+', 'Xx', 'X+', '+x', '++']
-    >>> sorted(generate_substitution('paf', SubstitutionParams()))
-    ['P4F', 'P4f', 'P@F', 'P@f', 'PAF', 'PAf', 'PaF', 'Paf', 'p4F', 'p4f', 'p@F', 'p@f', 'pAF', 'pAf', 'paF', 'paf']
-    >>> plus_punct = sorted(generate_substitution('+', SubstitutionParams(append_punctuation=True)))
-    >>> [ x for x in plus_punct if '#' in x ]
-    ['+#', 'X#', 'x#']
-    >>> [ x for x in plus_punct if len(x) == 1 ]
-    ['+', 'X', 'x']
-    >>> plus_number =  sorted(generate_substitution('+', SubstitutionParams(append_number=True)))
-    >>> [ x for x in plus_number if '4' in x ]
-    ['+4', 'X4', 'x4']
-    >>> [ x for x in plus_number if len(x) == 1 ]
-    ['+', 'X', 'x']
-    >>> plus_punct_number = sorted(generate_substitution('+', SubstitutionParams(append_punctuation=True, append_number=True)))
-    >>> [ x for x in plus_punct_number if '#' in x and '4' in x]
-    ['+#4', '+4#', 'X#4', 'X4#', 'x#4', 'x4#']
-    >>> [ x for x in plus_punct_number if '#' in x and len(x)==2]
-    ['+#', 'X#', 'x#']
-    """
-    substitutes_orig = substitute_characters(password, params.substitute_characters)
+        self.scrambling_params = scrambling_params
+        self.character_projection = CharacterProjector.build_character_projection(subst_dict)
+        self.trailing_regexp = self.build_trailing_regexp()
 
-    if params.append_punctuation and params.append_number:
-        substitutes = substitutes_orig + [''.join(item) for item in
-                                          list(product(*[substitutes_orig, _punctuation])) +
-                                          list(product(*[substitutes_orig, _numbers])) +
-                                          list(product(*[substitutes_orig, _punctuation, _numbers])) +
-                                          list(product(*[substitutes_orig, _numbers, _punctuation]))
-                                          ]
-    else:
-        substitutes = substitutes_orig
-        if params.append_punctuation:
-            substitutes = substitutes_orig + [''.join(item) for item in
-                                              product(*[substitutes_orig, _punctuation])]
+        self.trailing_cleaning_regexp = CharacterProjector.build_regexp(_numbers + _punctuation, is_tail=True)
 
-        if params.append_number:
-            substitutes = substitutes_orig + [''.join(item) for item in
-                                              product(*[substitutes_orig, _numbers])]
-    return substitutes
+    def index_password(self, password: str):
+        """
+        From an index, generate the ones to be indexed and later searched against.
+        Remove ending punctuation and numbers
+        :param password: the original password
+        :type password: str
+        :return: the list of string to index
+        :rtype: list[str]
 
+        >>> CharacterProjector().index_password('paf')
+        ['paf']
+        >>> CharacterProjector().index_password('Paf')
+        ['paf']
+        >>> CharacterProjector().index_password('hello')
+        ['heiio']
+        >>> CharacterProjector().index_password('he6a')
+        ['heba', 'hega']
+        """
+        cleaned_up = self.trailing_cleaning_regexp.sub('', password)
+        return self.project_word(cleaned_up)
 
-def substitute_characters(password: str, nb_chars_to_substitute: int):
-    """
-    Given a password, generate a list of passwords by substituting at most a given number of characters
-    :param password: the original password
-    :type password: str
-    :param nb_chars_to_substitute: the number of characters to substitute
-    :type nb_chars_to_substitute: int
-    :return: the original password
-    :rtype: str
+    def potential_indexes(self, password: str):
+        """
+        Based on a submitted password, generate the one that might have been indexed
+        :param password:
+        :type password:
+        :return:
+        :rtype:
+        >>> CharacterProjector().potential_indexes('HE!io')
+        ['heiio']
+        >>> CharacterProjector(scrambling_params=ScramblingParams(max_trailing=2)).potential_indexes('HeL101234')
+        ['heiioiz', 'heiiqiz', 'heiioize', 'heiiqize', 'heiioizea', 'heiiqizea']
+        >>> CharacterProjector(scrambling_params=ScramblingParams(max_trailing=10)).potential_indexes('HeL101234')
+        ['hei', 'heii', 'heiio', 'heiiq', 'heiioi', 'heiiqi', 'heiioiz', 'heiiqiz', 'heiioize', 'heiiqize', 'heiioizea', 'heiiqizea']
+        >>> CharacterProjector(scrambling_params=ScramblingParams(max_trailing=2)).potential_indexes('HE!io__')
+        ['heiio__']
+        """
 
-    >>> substitute_characters('paf', 0)
-    ['paf']
-    >>> substitute_characters('paf', 1)
-    ['paf', 'Paf', 'pAf', 'p@f', 'p4f', 'paF']
-    >>> substitute_characters('paf', 2)
-    ['paf', 'Paf', 'pAf', 'p@f', 'p4f', 'paF', 'PAf', 'P@f', 'P4f', 'PaF', 'pAF', 'p@F', 'p4F']
-    """
-    if nb_chars_to_substitute == 0:
-        return [password]
+        if self.trailing_regexp:
+            m = self.trailing_regexp.search(password)
+            if m:
+                truncated_passwords = [password[0:i] for i in range(m.start(), m.end() + 1)]
+                return list(chain(*[self.project_word(p) for p in truncated_passwords]))
 
-    indexes = list(range(0, len(password)))
-    max_substitution = min(nb_chars_to_substitute, len(password))
-    substituted_passwords = [password]
-    for n_substitution in range(1, max_substitution + 1):
-        substitution_indexes = combinations(indexes, n_substitution)
-        for index_set in substitution_indexes:
-            tmp = list(substitute_character_at_in_list([password], index_set[0]))
-            for i in index_set[1:len(index_set) - 1]:
-                tmp = tmp + list(substitute_character_at_in_list(tmp, i))
-            if len(index_set) > 1:
-                substituted_passwords = substituted_passwords + list(
-                    substitute_character_at_in_list(tmp, index_set[-1]))
+        return self.project_word(password)
+
+    def trim(self, word):
+        """
+
+        :param word:
+        :type word:
+        :return:
+        :rtype:
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).trim('paf')
+        'paf'
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).trim('pa9')
+        'pa9'
+        """
+        return word
+
+    def project_word(self, word):
+        """
+        Project the given word towards the combinaison (typically of lowercase characted)
+        :param word: the original word, typically a scrambled password
+        :type word: str
+        :return: the list of possibilities
+        :rtype: list[str]
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).project_word('paf')
+        ['paf']
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).project_word('p!af')
+        ['p!af']
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).project_word('pa6')
+        ['pag']
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).project_word('pa9')
+        ['pag', 'paq']
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).project_word('pa99')
+        ['pagg', 'pagq', 'paqg', 'paqq']
+        """
+        combinatorial = [self.project_char(c) for c in word]
+        return [''.join(c) for c in product(*combinatorial)]
+
+    def project_char(self, char):
+        """
+        return the array of the projected char, or a singleton if no projection is registered
+        :return: the list of chars
+        :rtype: list[str]
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).project_char('6')
+        ['g']
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).project_char('9')
+        ['g', 'q']
+        >>> CharacterProjector({'q': ['q', '9'], 'i': ['i', 'I', '1', 'l', 'L', '|', '!'], 'l': ['l', 'L', 'i', 'I', '|', '!', '1']}).project_char('9')
+        ['q']
+        >>> CharacterProjector({'q': ['q', '9'], 'i': ['i', 'I', '1', 'l', 'L', '|', '!'], 'l': ['l', 'L', 'i', 'I', '|', '!', '1']}).project_char('I')
+        ['i']
+        >>> CharacterProjector({'q': ['q', '9'], 'i': ['i', 'I', '1', 'l', 'L', '|', '!'], 'l': ['l', 'L', 'i', 'I', '|', '!', '1']}).project_char('L')
+        ['i']
+        >>> CharacterProjector({'q': ['q', '9'], 'i': ['i', 'I', '1', 'l', 'L', '|', '!'], 'l': ['l', 'L', 'i', 'I', '|', '!', '1']}).project_char('!')
+        ['i']
+        >>> CharacterProjector({'q': ['q', '9'], 'g': ['g', '6', '9']}).project_char('?')
+        ['?']
+        >>> CharacterProjector().project_char('L')
+        ['i']
+        """
+        return self.character_projection.get(char, [char])
+
+    def build_trailing_regexp(self):
+        """
+        Build the regular expression that is able to catch the trailing number/punctuation, depending on
+        the CharacterProjector properties
+        :return: the regular expression to capture what is eventually to be trimmed. Or None
+        :rtype: Regexp
+        >>> proj = CharacterProjector(scrambling_params=ScramblingParams(max_trailing=0, trailing_punctuations=True, trailing_numbers=True))
+        >>> proj.build_trailing_regexp()
+
+        >>> proj = CharacterProjector(scrambling_params=ScramblingParams(max_trailing=2, trailing_punctuations=True, trailing_numbers=True))
+        >>> proj.build_trailing_regexp().sub('', 'abcdef1!4?')
+        'abcdef1!'
+        >>> proj = CharacterProjector(scrambling_params=ScramblingParams(max_trailing=8, trailing_punctuations=True, trailing_numbers=True))
+        >>> proj.build_trailing_regexp().sub('', 'abcdef1!4?')
+        'abcdef'
+        """
+        if self.scrambling_params.max_trailing > 0:
+            if self.scrambling_params.trailing_numbers:
+                if self.scrambling_params.trailing_punctuations:
+                    trailing_chars = _punctuation + _numbers
+                else:
+                    trailing_chars = _numbers
             else:
-                substituted_passwords = substituted_passwords + tmp
+                if self.scrambling_params.trailing_punctuations:
+                    trailing_chars = _numbers
+            return CharacterProjector.build_regexp(trailing_chars, is_tail=True,
+                                                   max_length=self.scrambling_params.max_trailing)
+        return None
 
-    return substituted_passwords
+    @staticmethod
+    def build_regexp(chars: list, is_not: bool = False, is_head: bool = False, is_tail: bool = False,
+                     max_length: int = 0):
+        """
+        Create a rgular expression matchin a list opf characters
+        :param chars: the list of matchin gcharacters
+        :type chars: list[str]
+        :param is_not: match everything but the list [False]
+        :type is_head: bool
+        :param is_head: is the regular expression anchor to the beginning [False]
+        :type is_head: bool
+        :param is_tail: is the regular expression anchored to the tail [False]
+        :type is_tail: bool
+        :param max_length: max pattern length. 0 means unlimited [0]
+        :type max_length: int
+        :return: a regular expression
+        :rtype: Regex
+        >>> CharacterProjector.build_regexp(['0', '1', '2']).sub('', 'abc')
+        'abc'
+        >>> CharacterProjector.build_regexp(['0', '1', '2']).sub('', 'abc12')
+        'abc'
+        >>> CharacterProjector.build_regexp(['0', '1', '2']).sub('', 'abc9322')
+        'abc93'
+        >>> CharacterProjector.build_regexp(['0', '1', '2'], max_length=3, is_tail=True).sub('', 'abc930221')
+        'abc930'
+        >>> CharacterProjector.build_regexp(['0', '1', '2']).sub('', 'abc9129')
+        'abc99'
+        >>> CharacterProjector.build_regexp(['0', '1', '2'], is_not=True).sub('', 'abc')
+        ''
+        >>> CharacterProjector.build_regexp(['0', '1', '2'], is_not=True).sub('', '123abc2')
+        '122'
+        >>> CharacterProjector.build_regexp(['0', '1', '2'], is_not=True, is_tail=True).sub('', '123abc2')
+        '123abc2'
+        >>> CharacterProjector.build_regexp(['0', '1', '2'], is_tail=True).sub('', 'abc9129')
+        'abc9129'
+        >>> CharacterProjector.build_regexp(['0', '1', '2'], is_head=True).sub('', '123abc9129')
+        '3abc9129'
+        >>> CharacterProjector.build_regexp(['0', '1', '2'], is_head=True, is_tail=True).sub('', '123abc9129')
+        '123abc9129'
+        >>> CharacterProjector.build_regexp(['0', '1', '2'], is_head=True, is_tail=True).sub('', '012210')
+        ''
+        >>> CharacterProjector.build_regexp(['(', ')', '{', '}', '.', '?', '!', '+', '^', '$']).sub('', 'abc(){}.?+^$')
+        'abc'
+        """
+        regexp_special_character = {'(', ')', '{', '}', '[', ']', '.', '?', '!', '^', '$', '\\'}
+        str_regexp = ''.join(['\\' + c for c in chars if c in regexp_special_character] + [c for c in chars if
+                                                                                           c not in regexp_special_character])
 
+        if is_not:
+            str_regexp = '^' + str_regexp
+        str_regexp = f'[{str_regexp}]'
+        if max_length:
+            str_regexp += '{1,' + str(max_length) + '}'
+        else:
+            str_regexp += '+'
+        if is_tail:
+            str_regexp += '$'
+        if is_head:
+            str_regexp = '^' + str_regexp
+        return re.compile(str_regexp)
 
-def substitute_character_at_in_list(passwords: list, position: int):
-    """
-    Given a list of passwords, substitute the character at a given position and return the original list + the new one
-    :param passwords: the list of passwords. All of them should have the same length
-    :type passwords: list[str]
-    :param position: which character to substitute
-    :type position: int
-    :return: the enriched list of characters
-    :rtype: Iterable[str]
-    """"""
-    >>> list(substitute_character_at_in_list(['paf'], 0))
-    ['Paf']
-    >>> list(substitute_character_at_in_list(['paf', 'fla'], 0))
-    ['Paf', 'Fla']
-    """
-
-    return chain(*[substitute_character_at(password, position) for password in passwords])
-
-
-def substitute_character_at(password: str, position: int):
-    """
-    Given a password, substitute the character at a given position. Only create new passwords
-    :param password: the original password
-    :type password: str
-    :param position: which character to substitute
-    :type position: int
-    :return: the enriched list of characters
-    :rtype: list[str]
-    """"""
-    >>> substitute_character_at('paf', 0)
-    ['Paf']
-    >>> substitute_character_at('paf', 1)
-    ['pAf', 'p@f', 'p4f']
-    >>> substitute_character_at('paf', 2)
-    ['paF']
-    >>> substitute_character_at('_af', 0)
-    []
-    """
-
-    if position >= len(password):
-        raise ValueError(f'position {position} is out of range for "{password}"')
-
-    char_to_substitute = password[position]
-    if char_to_substitute not in _subDict:
-        return []
-
-    if position == 0:
-        prefix = ''
-    else:
-        prefix = password[0: position]
-
-    if position == len(password) - 1:
-        suffix = ''
-    else:
-        suffix = password[(position + 1):len(password)]
-
-    return [prefix + subst + suffix for subst in _subDict[char_to_substitute] if subst != char_to_substitute]
+    @staticmethod
+    def build_character_projection(subst_dict: dict):
+        """
+        from a substDict, build the project (the reverse one)
+        :param subst_dict: one letter can be replace by several (char -> list of chars)
+        :type subst_dict: dict
+        :return: the projection (char -> list of chars
+        :rtype: dict
+        >>> # a single entry
+        >>> CharacterProjector.build_character_projection({'a': ['a', 'A', '@']})
+        {'a': ['a'], 'A': ['a'], '@': ['a']}
+        >>> # two non overlapping entries
+        >>> CharacterProjector.build_character_projection({'a': ['a', 'A', '@'], 'b': ['b', 'B', '8', '6']})
+        {'a': ['a'], 'A': ['a'], '@': ['a'], 'b': ['b'], 'B': ['b'], '8': ['b'], '6': ['b']}
+        >>> # i/l project to the same
+        >>> CharacterProjector.build_character_projection({'i': ['i', 'I', '1', 'l', 'L', '|', '!'], 'l': ['i', 'I', '1', 'l', 'L', '|', '!']})
+        {'i': ['i'], 'I': ['i'], '1': ['i'], 'l': ['i'], 'L': ['i'], '|': ['i'], '!': ['i']}
+        >>> # q/g share 9, but not 6
+        >>> CharacterProjector.build_character_projection({'q': ['q', 'Q', '9', '0', 'O'], 'g': ['g', 'G', '6', '9']})
+        {'g': ['g'], 'G': ['g'], '6': ['g'], '9': ['g', 'q'], 'q': ['q'], 'Q': ['q'], '0': ['q'], 'O': ['q']}
+        """
+        proj_set = {}
+        seen_projections = set()
+        for char_root, subst in sorted(subst_dict.items(), key=lambda k: k[0]):
+            subst_str = ''.join(sorted(subst))
+            if subst_str in seen_projections:
+                continue
+            seen_projections.add(subst_str)
+            for char_subst in subst:
+                if char_subst not in proj_set:
+                    proj_set[char_subst] = set()
+                proj_set[char_subst].add(char_root)
+        return {k: sorted(list(xs)) for k, xs in proj_set.items()}

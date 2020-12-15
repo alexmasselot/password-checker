@@ -1,30 +1,24 @@
 from flask import Flask, jsonify
+from flask_restful import Resource, Api
 
 from flaskr.passwordChecker.dictionary import DictionaryChecker
 from flaskr.passwordChecker.robustness import compute_robustness
-from flaskr.passwordChecker.substitute import SubstitutionParams
+from flaskr.passwordChecker.substitute import CharacterProjector, ScramblingParams
 
 app = Flask(__name__)
+api = Api(app)
 
-dicoChecker = DictionaryChecker()
-dicoChecker.load_all_dictionaries('flaskr/resources/dictionaries/250',
-                                  SubstitutionParams(substitute_characters=2, append_punctuation=True,
-                                                     append_number=True))
-dicoChecker.load_all_dictionaries('flaskr/resources/dictionaries/long',
-                                  SubstitutionParams(substitute_characters=0, append_punctuation=False,
-                                                     append_number=False))
-print(f'Dictionaries {dicoChecker}')
+character_projector = CharacterProjector(scrambling_params=ScramblingParams(max_trailing=4))
+dico_checker = DictionaryChecker(character_projector=character_projector)
+
+dico_checker.load_all_dictionaries('flaskr/resources/dictionaries/long')
+print(f'Dictionaries {dico_checker}')
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
+class PasswordChecker(Resource):
+    def get(self, password):
+        robustness = compute_robustness(password, dico_checker)
+        return robustness.serialize()
 
 
-@app.route('/<password>')
-def analyze(password):
-    robustness = compute_robustness(password, dicoChecker)
-    return jsonify(robustness.serialize())
-
-
-
+api.add_resource(PasswordChecker, '/api/<string:password>')

@@ -1,4 +1,4 @@
-from flaskr.passwordChecker.complexity import password_length_score, brute_force_ms
+from flaskr.passwordChecker.complexity import password_length_score, compute_brute_force_ms
 from flaskr.passwordChecker.dictionary import DictionaryChecker
 
 
@@ -35,6 +35,6 @@ def compute_robustness(password: str, dictionaryChecker: DictionaryChecker):
     """
     return PasswordRobustness(
         length_score=password_length_score(password),
-        brute_force_ms=brute_force_ms(password),
-        exists_in_dictionary=dictionaryChecker.exists_in_any_dictionary(password)
+        brute_force_ms=compute_brute_force_ms(password),
+        exists_in_dictionary=dictionaryChecker.contains(password)
     )

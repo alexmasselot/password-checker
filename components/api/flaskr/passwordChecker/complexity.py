@@ -96,7 +96,7 @@ def alphabet_size(password: str):
     return sum([len(_character_types[t]) for t in chars_types])
 
 
-def brute_force_ms(password: str):
+def compute_brute_force_ms(password: str):
     """
     Estimate the time to simply brute force the password
 
@@ -105,9 +105,9 @@ def brute_force_ms(password: str):
     :return: estimated milliseconds to brute force
     :rtype: int
 
-    >>> brute_force_ms('haha')
+    >>> compute_brute_force_ms('haha')
     1.4374834853727588e-06
-    >>> brute_force_ms('p4F le Chï3n !')
+    >>> compute_brute_force_ms('p4F le Chï3n !')
     7.111997344304575e+16
     """
     i7_ips = 317900000000
