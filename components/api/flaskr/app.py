@@ -9,7 +9,7 @@ app = Flask(__name__)
 character_projector = CharacterProjector(scrambling_params=ScramblingParams(max_trailing=4))
 dico_checker = DictionaryChecker(character_projector=character_projector)
 
-dico_checker.load_all_dictionaries('flaskr/resources/dictionaries/long')
+dico_checker.load_all_dictionaries('flaskr/resources/dictionaries')
 print(f'Dictionaries {dico_checker}')
 
 

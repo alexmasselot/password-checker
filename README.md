@@ -23,12 +23,17 @@ To run all of them, on file changes (useful in dev)
     ptw 
 
 #### Check it out
-Once the API is running (`flask run`), you can visit:
+Once the API is running (`flask run`), you can post to: 
 ```
-http://127.0.0.1:5000/api/paf%20le%20chien
+http://127.0.0.1:5000/api/check
+   {
+      "password": "paf the dog"
+   }
 ```
 
-### web frontend
+### Web frontend
+
+The frontend is a simple Vue.js application
 
 ## Sources
 ### password dictionaries
