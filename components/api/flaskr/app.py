@@ -4,7 +4,7 @@ from flaskr.passwordChecker.dictionary import DictionaryChecker
 from flaskr.passwordChecker.robustness import compute_robustness
 from flaskr.passwordChecker.substitute import CharacterProjector, ScramblingParams
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='')
 
 character_projector = CharacterProjector(scrambling_params=ScramblingParams(max_trailing=4))
 dico_checker = DictionaryChecker(character_projector=character_projector)
@@ -18,3 +18,7 @@ def chek_password():
     password = request.get_json()['password']
     robustness = compute_robustness(password, dico_checker)
     return jsonify(robustness.serialize())
+
+@app.route('/')
+def root():
+    return app.send_static_file('index.html')
