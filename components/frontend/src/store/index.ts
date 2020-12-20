@@ -24,7 +24,7 @@ export default new Vuex.Store({
   actions: {
     checkPassword({state, commit}, password) {
       commit('clearRobustness');
-      axios.get('/api/' + password)
+      axios.post('/api/check', {password})
         .then((resp) => commit('setRobustness', resp.data))
         .catch((err) => console.error(err));
     }
