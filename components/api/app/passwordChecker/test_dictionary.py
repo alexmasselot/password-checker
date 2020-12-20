@@ -7,14 +7,14 @@ from passwordChecker.substitute import CharacterProjector, ScramblingParams
 class DictionaryTest(TestCase):
     def test_load_dictionary(self):
         dico_checker = DictionaryChecker(CharacterProjector())
-        dico = dico_checker.load_dictionary('flaskr/resources/test/dictionaries/one.txt')
+        dico = dico_checker.load_dictionary('app/resources/test/dictionaries/one.txt')
 
         self.assertTrue('paf' in dico.words)
         self.assertTrue('ie' in dico.words)
 
     def test_load_all_dictionaries(self):
         dico_checker = DictionaryChecker(CharacterProjector())
-        dico_checker.load_all_dictionaries('flaskr/resources/test/dictionaries')
+        dico_checker.load_all_dictionaries('app/resources/test/dictionaries')
 
         got = dico_checker.dictionaries
 
@@ -31,7 +31,7 @@ class DictionaryTest(TestCase):
 
     def test_load_all_dictionaries_with_trailing(self):
         dico_checker = DictionaryChecker(CharacterProjector(scrambling_params=ScramblingParams(max_trailing=4)))
-        dico_checker.load_all_dictionaries('flaskr/resources/test/dictionaries')
+        dico_checker.load_all_dictionaries('app/resources/test/dictionaries')
 
         self.assertTrue(dico_checker.contains('chien'))
         self.assertTrue(dico_checker.contains('flap'))
