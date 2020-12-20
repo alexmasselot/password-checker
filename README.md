@@ -10,7 +10,9 @@ A [Flask](https://flask.palletsprojects.com/) powerer API.
 As good default practices, use a virtual environment, install dependencies `pip install -f requirements.txt`
 
 
-#### TEsting
+
+
+#### Testing
 
 Unit tests are in doctests, and integration ones in xxx_test.py
 

@@ -1,7 +1,7 @@
 from itertools import chain
 
 # One technique to check for password robustness is to run them against dictionaries.
-from flaskr.passwordChecker.substitute import  CharacterProjector
+from passwordChecker.substitute import  CharacterProjector
 
 
 class PasswordDictionary:

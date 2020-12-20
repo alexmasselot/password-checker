@@ -2,4 +2,4 @@ venv
 .idea
 *.iml
 __pycache__
-/flaskr/static/
+/app/static/

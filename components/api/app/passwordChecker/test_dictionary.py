@@ -1,7 +1,7 @@
 from unittest import TestCase
 
-from flaskr.passwordChecker.dictionary import DictionaryChecker
-from flaskr.passwordChecker.substitute import CharacterProjector, ScramblingParams
+from passwordChecker.dictionary import DictionaryChecker
+from passwordChecker.substitute import CharacterProjector, ScramblingParams
 
 
 class DictionaryTest(TestCase):

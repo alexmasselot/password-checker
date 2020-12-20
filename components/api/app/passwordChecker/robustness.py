@@ -1,5 +1,5 @@
-from flaskr.passwordChecker.complexity import password_length_score, compute_brute_force_ms
-from flaskr.passwordChecker.dictionary import DictionaryChecker
+from passwordChecker.complexity import password_length_score, compute_brute_force_ms
+from passwordChecker.dictionary import DictionaryChecker
 
 
 class PasswordRobustness:
