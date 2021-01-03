@@ -10,7 +10,9 @@ A [Flask](https://flask.palletsprojects.com/) powerer API.
 As good default practices, use a virtual environment, install dependencies `pip install -f requirements.txt`
 
 
-#### TEsting
+
+
+#### Testing
 
 Unit tests are in doctests, and integration ones in xxx_test.py
 
@@ -23,12 +25,17 @@ To run all of them, on file changes (useful in dev)
     ptw 
 
 #### Check it out
-Once the API is running (`flask run`), you can visit:
+Once the API is running (`flask run`), you can post to: 
 ```
-http://127.0.0.1:5000/paf%20le%20chien
+http://127.0.0.1:5000/api/check
+   {
+      "password": "paf the dog"
+   }
 ```
 
-### web frontend
+### Web frontend
+
+The frontend is a simple Vue.js application
 
 ## Sources
 ### password dictionaries
