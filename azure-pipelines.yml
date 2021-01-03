@@ -11,7 +11,7 @@ jobs:
           versionSpec: '14'
     - script: npm install
       workingDirectory: components/frontend
-    - script: npm run test
+    - script: npm run test:unit
       workingDirectory: components/frontend
     - script: npm run build
       workingDirectory: components/frontend

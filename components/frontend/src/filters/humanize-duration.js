@@ -16,6 +16,6 @@ export default Vue.filter('humanizeDuration', (ms) => {
   if (ms < 1000) {
     return '< 1s';
   }
-  return humanizeDuration(ms, {round: true, largest: 2});
+  return humanizeDuration(ms, {round: true, largest: 2, conjunction: ' and '});
 })
 
