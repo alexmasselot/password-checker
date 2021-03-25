@@ -38,3 +38,6 @@ def compute_robustness(password: str, dictionaryChecker: DictionaryChecker):
         brute_force_ms=compute_brute_force_ms(password),
         exists_in_dictionary=dictionaryChecker.contains(password)
     )
+
+def level_robustness(passwordRobustness : PasswordRobustness):
+    
