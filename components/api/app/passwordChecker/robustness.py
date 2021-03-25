@@ -39,5 +39,22 @@ def compute_robustness(password: str, dictionaryChecker: DictionaryChecker):
         exists_in_dictionary=dictionaryChecker.contains(password)
     )
 
-def level_robustness(passwordRobustness : PasswordRobustness):
-    
+def level_robustness(passwordRobustness: PasswordRobustness):
+    """
+
+    define the level of the password robustness
+    :param passwordRobustness: to define the level of the password robustness
+    :type passwordRobustness: PasswordRobustness
+    :return: the level of the password robustness
+    :rtype: int
+    level== 1:very_weak, 2:weak, 3:medium, 4:strong
+    """
+    # list of (len_score, level), sorted by len_score. We'll stop at the first one when the length_score is matching
+    level_thresholds = [(16, 1), (32, 2), (64, 3), (100, 4)]
+    level = 1
+
+    if passwordRobustness.exists_in_dictionary==False:
+        matching_threshold = next((lt for lt in level_thresholds if passwordRobustness.length_score <= lt[0]), None)
+        level = matching_threshold[1]
+
+    return level
