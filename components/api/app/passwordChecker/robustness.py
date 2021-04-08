@@ -21,7 +21,7 @@ class PasswordRobustness:
         return {
             "lengthScore": self.length_score,
             "bruteForceMs": self.brute_force_ms,
-            "existsInDictionary": self.exists_in_dictionary
+            "existsInDictionary": self.exists_in_dictionary,
             "alphabetSize": self.alphabet_size
         }
 
